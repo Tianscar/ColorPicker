@@ -1,5 +1,5 @@
 # ColorPicker
-**Simple ColorPicker view for Android.**
+**Simple ColorPicker widgets for Android.**
 
 * **RectColorPicker**<br/>
 The first available ColorPicker view.<br/>
