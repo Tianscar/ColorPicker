@@ -25,12 +25,24 @@
 
 package com.tianscar.colorpicker;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.util.AttributeSet;
-import android.widget.FrameLayout;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.LinearLayout;
+
+import androidx.annotation.Nullable;
+import androidx.core.math.MathUtils;
 
 public class RectColorPicker extends LinearLayout {
 
@@ -54,19 +66,23 @@ public class RectColorPicker extends LinearLayout {
         }
     }
 
-    private int mDividerSize;
-
-    public int getDividerSize() {
-        return mDividerSize;
-    }
-
-    public void setDividerSize(int dividerSize) {
-        mDividerSize = dividerSize;
-    }
-
     private final ColorRect colorRect;
     private final HueRect hueRect;
-    private final FrameLayout divider;
+
+    public final static class Order {
+
+        private Order() {}
+
+        public final static int ASCENDING = 0;
+        public final static int DESCENDING = 1;
+
+    }
+
+    private volatile int mOrder;
+
+    public int getOrder() {
+        return mOrder;
+    }
 
     private int mColorAlpha;
 
@@ -137,7 +153,6 @@ public class RectColorPicker extends LinearLayout {
                 detectColorPicked(getColor());
             }
         });
-        divider = new FrameLayout(context, attrs, defStyleAttr);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.RectColorPicker,
                 defStyleAttr, 0);
         setCursorVisible(typedArray.getBoolean(R.styleable.RectColorPicker_android_cursorVisible, true));
@@ -146,8 +161,15 @@ public class RectColorPicker extends LinearLayout {
         setCursorRadius(typedArray.getDimension(R.styleable.RectColorPicker_cursorRadius,
                 getResources().getDimension(R.dimen.colorpicker_rect_cursor_radius_default)));
         setOrientation(typedArray.getInt(R.styleable.RectColorPicker_android_orientation, HORIZONTAL));
-        setDividerSize((int) typedArray.getDimension(R.styleable.RectColorPicker_dividerSize,
-                getResources().getDimension(R.dimen.rect_colorpicker_divider_width_default)));
+        final float initHue = typedArray.getFloat(R.styleable.RectColorPicker_hue, 0);
+        final float initSaturation = typedArray.getFloat(R.styleable.RectColorPicker_saturation, 0);
+        final float initValue = typedArray.getFloat(R.styleable.RectColorPicker_value, 1);
+        final int initOrder = typedArray.getInt(R.styleable.RectColorPicker_order,
+                Order.ASCENDING);
+        final float initHueRectWeight = typedArray.getFloat(R.styleable.RectColorPicker_hueRectWeight
+                , 8);
+        final float initColorRectWeight = typedArray.getFloat(R.styleable.RectColorPicker_colorRectWeight
+        , 2);
         typedArray.recycle();
         post(new Runnable() {
             @Override
@@ -155,21 +177,61 @@ public class RectColorPicker extends LinearLayout {
                 LayoutParams params1 = new LayoutParams(
                         LayoutParams.WRAP_CONTENT,
                         LayoutParams.MATCH_PARENT);
-                params1.weight = 1;
                 colorRect.setLayoutParams(params1);
-                addView(colorRect);
-                LayoutParams params2 = new LayoutParams(mDividerSize, mDividerSize);
-                divider.setLayoutParams(params2);
-                divider.setBackgroundColor(Color.TRANSPARENT);
-                addView(divider);
-                LayoutParams params3 = new LayoutParams(
+                LayoutParams params2 = new LayoutParams(
                         LayoutParams.WRAP_CONTENT,
                         LayoutParams.MATCH_PARENT);
-                params3.weight = 9;
-                hueRect.setLayoutParams(params3);
-                addView(hueRect);
+                hueRect.setLayoutParams(params2);
+                setColorRectWeight(initColorRectWeight);
+                setHueRectWeight(initHueRectWeight);
+                setHue(initHue);
+                setSaturation(initSaturation);
+                setValue(initValue);
+                setOrder(initOrder);
             }
         });
+    }
+
+    public void setHueRectWeight(float weight) {
+        Utils.setWeight(hueRect, weight);
+    }
+
+    public void setColorRectWeight(float weight) {
+        Utils.setWeight(colorRect, weight);
+    }
+
+    public void ascending() {
+        setOrder(Order.ASCENDING);
+    }
+
+    public void descending() {
+        setOrder(Order.DESCENDING);
+    }
+
+    public void reverse() {
+        switch (mOrder) {
+            case Order.ASCENDING: default:
+                descending();
+                break;
+            case Order.DESCENDING:
+                ascending();
+                break;
+        }
+    }
+
+    public void setOrder(int order) {
+        removeAllViews();
+        mOrder = order;
+        switch (order) {
+            case Order.ASCENDING: default:
+                addView(colorRect);
+                addView(hueRect);
+                break;
+            case Order.DESCENDING:
+                addView(hueRect);
+                addView(colorRect);
+                break;
+        }
     }
 
     @Override
@@ -254,5 +316,536 @@ public class RectColorPicker extends LinearLayout {
         });
     }
 
+    static class ColorRect extends View {
+
+        private final Paint mCursorPaint;
+        private boolean mCursorVisible;
+        private float mCursorWidth;
+
+        private final Paint mColorPaint;
+
+        private final float[] mColorHSV = { 1.0f, 1.0f, 1.0f };
+
+        private volatile float positionX, positionY;
+
+        private volatile float mSaturation, mValue;
+
+        private OnSaturationChangedListener mOnSaturationChangedListener;
+
+        public interface OnSaturationChangedListener {
+            void onSaturationChanged(float saturation);
+        }
+
+        public void setOnSaturationChangedListener(OnSaturationChangedListener listener) {
+            mOnSaturationChangedListener = listener;
+        }
+
+        public OnSaturationChangedListener getOnSaturationChangedListener() {
+            return mOnSaturationChangedListener;
+        }
+
+        private OnValueChangedListener mOnValueChangedListener;
+
+        public interface OnValueChangedListener {
+            void onValueChanged(float value);
+        }
+
+        public void setOnValueChangedListener(OnValueChangedListener listener) {
+            mOnValueChangedListener = listener;
+        }
+
+        public OnValueChangedListener getOnValueChangedListener() {
+            return mOnValueChangedListener;
+        }
+
+        public float getSaturation() {
+            return mSaturation;
+        }
+
+        public void setSaturation(float saturation) {
+            changeSaturation(saturation);
+            positionX = getPositionXFromSaturation(saturation);
+            invalidate();
+        }
+
+        private void changeSaturation(float saturation) {
+            saturation = MathUtils.clamp(saturation, 0, 1);
+            float oldSaturation = getSaturation();
+            mSaturation = saturation;
+            if (mOnSaturationChangedListener != null) {
+                if (mSaturation != oldSaturation) {
+                    mOnSaturationChangedListener.onSaturationChanged(mSaturation);
+                }
+            }
+        }
+
+        public float getValue() {
+            return mValue;
+        }
+
+        public void setValue(float value) {
+            changeValue(value);
+            positionY = getPositionYFromValue(value);
+            invalidate();
+        }
+
+        private void changeValue(float value) {
+            value = MathUtils.clamp(value, 0, 1);
+            float oldValue = getValue();
+            mValue = value;
+            if (mOnValueChangedListener != null) {
+                if (mValue != oldValue) {
+                    mOnValueChangedListener.onValueChanged(mValue);
+                }
+            }
+        }
+
+        public void setCursorWidth(float cursorWidth) {
+            mCursorWidth = cursorWidth;
+            invalidate();
+        }
+
+        public float getCursorWidth() {
+            return mCursorWidth;
+        }
+
+        public void setCursorVisible(boolean cursorVisible) {
+            mCursorVisible = cursorVisible;
+            invalidate();
+        }
+
+        public boolean isCursorVisible() {
+            return mCursorVisible;
+        }
+
+        public void setPositionX(float positionX) {
+            this.positionX = positionX;
+            changeSaturation(getPositionXSaturation(positionX));
+            invalidate();
+        }
+
+        public void setPositionY(float positionY) {
+            this.positionY = positionY;
+            changeValue(getPositionYValue(positionY));
+            invalidate();
+        }
+
+        public ColorRect(Context context) {
+            this(context, null);
+        }
+
+        public ColorRect(Context context, AttributeSet attrs) {
+            this(context, attrs, 0);
+        }
+
+        public ColorRect(Context context, AttributeSet attrs, int defStyle) {
+            super(context, attrs, defStyle);
+            mColorPaint = new Paint();
+            mCursorPaint = new Paint();
+            mCursorPaint.setDither(true);
+            mCursorPaint.setAntiAlias(true);
+            mCursorPaint.setStyle(Paint.Style.STROKE);
+            mCursorVisible = true;
+            mCursorWidth = getResources().getDimension(R.dimen.colorpicker_cursor_width_default);
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    setHue(0);
+                    setSaturation(0);
+                    setValue(1);
+                }
+            });
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
+            int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
+            int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
+            int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
+            if (widthSpecMode == MeasureSpec.AT_MOST && heightSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+            }
+            else if (widthSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(getMeasuredWidth(), heightSpecSize);
+            }
+            else if (heightSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(widthSpecSize, getMeasuredHeight());
+            }
+        }
+
+        private float safeCursorWidth() {
+            return Math.max(
+                    getResources().getDimension(R.dimen.colorpicker_cursor_width_default),
+                    mCursorWidth);
+        }
+
+        @SuppressLint("DrawAllocation")
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            float strokeWidth = safeCursorWidth();
+
+            LinearGradient luar = new LinearGradient(0, 0,
+                    0, getMeasuredHeight(), 0xFFFFFFFF, 0xFF000000, Shader.TileMode.CLAMP);
+            int color = Color.HSVToColor(mColorHSV);
+            LinearGradient dalam = new LinearGradient(0, 0,
+                    getMeasuredWidth(), 0, 0xFFFFFFFF, color, Shader.TileMode.CLAMP);
+            mColorPaint.setShader(luar);
+            canvas.drawRect(strokeWidth * 3, strokeWidth * 3,
+                    getMeasuredWidth() - strokeWidth * 3, getMeasuredHeight() - strokeWidth * 3,
+                    mColorPaint);
+            mColorPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
+            mColorPaint.setShader(dalam);
+            canvas.drawRect(strokeWidth * 3, strokeWidth * 3,
+                    getMeasuredWidth() - strokeWidth * 3, getMeasuredHeight() - strokeWidth * 3,
+                    mColorPaint);
+
+            if (mCursorVisible) {
+                mCursorPaint.setColor(Color.WHITE);
+                mCursorPaint.setStrokeWidth(strokeWidth);
+                canvas.drawCircle(positionX, positionY, strokeWidth * 2, mCursorPaint);
+                mCursorPaint.setColor(Color.BLACK);
+                mCursorPaint.setStrokeWidth(strokeWidth / 2);
+                canvas.drawCircle(positionX, positionY, strokeWidth * 2, mCursorPaint);
+            }
+
+        }
+
+        public void setHue(float hue) {
+            hue = MathUtils.clamp(hue, 0, 360);
+            mColorHSV[0] = hue;
+            invalidate();
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            if (hasOnClickListeners()) {
+                return super.onTouchEvent(event);
+            }
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                case MotionEvent.ACTION_UP:
+                    float strokeWidth = safeCursorWidth();
+                    positionX = MathUtils.clamp(event.getX(),
+                            strokeWidth * 3, getMeasuredWidth() - strokeWidth * 3);
+                    positionY = MathUtils.clamp(event.getY(),
+                            strokeWidth * 3, getMeasuredHeight() - strokeWidth * 3);
+                    changeSaturation(getPositionXSaturation(positionX));
+                    changeValue(getPositionYValue(positionY));
+                    invalidate();
+                    break;
+            }
+            return true;
+        }
+
+        public float getPositionXSaturation(float x) {
+            float strokeWidth = safeCursorWidth();
+            x = MathUtils.clamp(x, strokeWidth * 3, getMeasuredWidth() - strokeWidth * 3);
+            return 1.0f / (getMeasuredWidth() - strokeWidth * 6) * (x - strokeWidth * 3);
+        }
+
+        public float getPositionXFromSaturation(float saturation) {
+            float strokeWidth = safeCursorWidth();
+            saturation = MathUtils.clamp(saturation, 0, 1);
+            return strokeWidth * 3 + (getMeasuredWidth() - strokeWidth * 6) * saturation;
+        }
+
+        public float getPositionYValue(float y) {
+            float strokeWidth = safeCursorWidth();
+            y = MathUtils.clamp(y, strokeWidth * 3, getMeasuredHeight() - strokeWidth * 3);
+            return 1.0f - 1.0f / (getMeasuredHeight() - strokeWidth * 6) * (y - strokeWidth * 3);
+        }
+
+        public float getPositionYFromValue(float value) {
+            float strokeWidth = safeCursorWidth();
+            value = MathUtils.clamp(value, 0, 1);
+            return strokeWidth * 3 + (getMeasuredHeight() - strokeWidth * 6) * (1.0f - value);
+        }
+
+    }
+
+    static class HueRect extends View {
+
+        public static final int HORIZONTAL = 0;
+        public static final int VERTICAL = 1;
+
+        private static final int[] mColors;
+
+        static {
+            int colorCount = 12;
+            int colorAngleStep = 360 / colorCount;
+            mColors = new int[colorCount + 1];
+            float[] hsv = new float[]{0f, 1f, 1f};
+            for (int i = 0; i < mColors.length; i++) {
+                hsv[0] = 360 - (i * colorAngleStep) % 360;
+                if (hsv[0] == 360) hsv[0] = 359;
+                mColors[i] = Color.HSVToColor(hsv);
+            }
+        }
+
+        private final Paint mCursorPaint;
+        private boolean mCursorVisible;
+        private float mCursorWidth;
+        private float mCursorRadius;
+        private int mOrientation;
+
+        public void setCursorWidth(float cursorWidth) {
+            mCursorWidth = cursorWidth;
+            invalidate();
+        }
+
+        public float getCursorWidth() {
+            return mCursorWidth;
+        }
+
+        public void setCursorRadius(float cursorRadius) {
+            mCursorRadius = cursorRadius;
+        }
+
+        public void setOrientation(int orientation) {
+            mOrientation = orientation;
+            invalidate();
+        }
+
+        public int getOrientation() {
+            return mOrientation;
+        }
+
+        public void setCursorVisible(boolean cursorVisible) {
+            mCursorVisible = cursorVisible;
+            invalidate();
+        }
+
+        public boolean isCursorVisible() {
+            return mCursorVisible;
+        }
+
+        private final Paint mColorPaint;
+
+        private float mHue;
+
+        private float mPosition;
+
+        private OnHueChangedListener mOnHueChangedListener;
+
+        public interface OnHueChangedListener {
+            void onHueChanged(float hue);
+        }
+
+        public void setOnHueChangedListener(OnHueChangedListener listener) {
+            mOnHueChangedListener = listener;
+        }
+
+        public OnHueChangedListener getOnHueChangedListener() {
+            return mOnHueChangedListener;
+        }
+
+        public HueRect(Context context) {
+            this(context, null);
+        }
+
+        public HueRect(Context context, @Nullable AttributeSet attrs) {
+            this(context, attrs, 0);
+        }
+
+        public HueRect(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+            super(context, attrs, defStyleAttr);
+            mColorPaint = new Paint();
+            mCursorPaint = new Paint();
+            mCursorPaint.setDither(true);
+            mCursorPaint.setAntiAlias(true);
+            mCursorPaint.setStyle(Paint.Style.STROKE);
+            mCursorVisible = true;
+            mCursorWidth = getResources().getDimension(R.dimen.colorpicker_cursor_width_default);
+            mCursorRadius = getResources().getDimension(R.dimen.colorpicker_rect_cursor_radius_default);
+            mOrientation = VERTICAL;
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    setHue(0);
+                }
+            });
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
+            int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
+            int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
+            int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
+            if (widthSpecMode == MeasureSpec.AT_MOST && heightSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+            }
+            else if (widthSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(getMeasuredWidth(), heightSpecSize);
+            }
+            else if (heightSpecMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(widthSpecSize, getMeasuredHeight());
+            }
+        }
+
+        private float safeCursorWidth() {
+            return Math.max(
+                    getResources().getDimension(R.dimen.colorpicker_cursor_width_default),
+                    mCursorWidth);
+        }
+
+        @SuppressLint("DrawAllocation")
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            float strokeWidth = safeCursorWidth();
+
+            LinearGradient luar;
+            switch (mOrientation) {
+                case VERTICAL: default:
+                    luar = new LinearGradient(0, getMeasuredHeight(),
+                            0, 0,
+                            mColors, null, Shader.TileMode.CLAMP);
+                    mColorPaint.setShader(luar);
+                    canvas.drawRect(strokeWidth * 2, strokeWidth * 3,
+                            getMeasuredWidth() - strokeWidth * 2,
+                            getMeasuredHeight() - strokeWidth * 3,
+                            mColorPaint);
+                    break;
+                case HORIZONTAL:
+                    luar = new LinearGradient(getMeasuredWidth(), 0,
+                            0, 0,
+                            mColors, null, Shader.TileMode.CLAMP);
+                    mColorPaint.setShader(luar);
+                    canvas.drawRect(strokeWidth * 3, strokeWidth * 2,
+                            getMeasuredWidth() - strokeWidth * 3,
+                            getMeasuredHeight() - strokeWidth * 2,
+                            mColorPaint);
+                    break;
+            }
+
+            if (mCursorVisible) {
+
+                mCursorPaint.setStrokeWidth(strokeWidth);
+                mCursorPaint.setColor(Color.WHITE);
+
+                RectF rectF;
+                switch (mOrientation) {
+                    case VERTICAL: default:
+                        rectF = new RectF(strokeWidth / 2,
+                                mPosition - strokeWidth * 2, getMeasuredWidth() - strokeWidth / 2,
+                                mPosition + strokeWidth * 2);
+                        break;
+                    case HORIZONTAL:
+                        rectF = new RectF(mPosition - strokeWidth * 2, strokeWidth / 2,
+                                mPosition + strokeWidth * 2,
+                                getMeasuredHeight() - strokeWidth / 2);
+                        break;
+                }
+
+                canvas.drawRoundRect(rectF, mCursorRadius, mCursorRadius, mCursorPaint);
+
+                mCursorPaint.setColor(Color.BLACK);
+                mCursorPaint.setStrokeWidth(strokeWidth / 2);
+
+                canvas.drawRoundRect(rectF, mCursorRadius, mCursorRadius, mCursorPaint);
+
+            }
+
+        }
+
+        public void setHue(float hue) {
+            changeHue(hue);
+            mPosition = getPositionFromHue(hue);
+            invalidate();
+        }
+
+        public void setPosition(float position) {
+            switch (mOrientation) {
+                case VERTICAL: default:
+                    mPosition = MathUtils.clamp(position, 0, getMeasuredHeight());
+                    break;
+                case HORIZONTAL:
+                    mPosition = MathUtils.clamp(position, 0, getMeasuredWidth());
+                    break;
+            }
+            changeHue(getPositionHue(mPosition));
+            invalidate();
+        }
+
+        private void changeHue(float hue) {
+            hue = MathUtils.clamp(hue, 0, 360);
+            float oldHue = getHue();
+            mHue = hue;
+            if (mOnHueChangedListener != null) {
+                if (mHue != oldHue) {
+                    mOnHueChangedListener.onHueChanged(mHue);
+                }
+            }
+        }
+
+        public float getHue() {
+            return mHue;
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            if (hasOnClickListeners()) {
+                return super.onTouchEvent(event);
+            }
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                case MotionEvent.ACTION_UP:
+                    float strokeWidth = safeCursorWidth();
+                    switch (mOrientation) {
+                        case VERTICAL: default:
+                            mPosition = MathUtils.clamp(event.getY(),
+                                    strokeWidth * 3, getMeasuredHeight() - strokeWidth * 3);
+                            break;
+                        case HORIZONTAL:
+                            mPosition = MathUtils.clamp(event.getX(),
+                                    strokeWidth * 3, getMeasuredWidth() - strokeWidth * 3);
+                            break;
+                    }
+                    changeHue(getPositionHue(mPosition));
+                    invalidate();
+                    break;
+            }
+            return true;
+        }
+
+        public float getPositionHue(float position) {
+            float strokeWidth = safeCursorWidth();
+            switch (mOrientation) {
+                case VERTICAL: default:
+                    position = MathUtils.clamp(position, strokeWidth * 3,
+                            getMeasuredHeight() - strokeWidth * 3);
+                    return (position - strokeWidth * 3) /
+                            (getMeasuredHeight() - strokeWidth * 6) * 360;
+                case HORIZONTAL:
+                    position = MathUtils.clamp(position, strokeWidth * 3,
+                            getMeasuredWidth() - strokeWidth * 3);
+                    return (position - strokeWidth * 3) /
+                            (getMeasuredWidth() - strokeWidth * 6) * 360;
+            }
+        }
+
+        public float getPositionFromHue(float hue) {
+            hue = MathUtils.clamp(hue, 0, 360);
+            float strokeWidth = safeCursorWidth();
+            switch (mOrientation) {
+                case VERTICAL: default:
+                    return strokeWidth * 3 + (getMeasuredHeight() - strokeWidth * 6) * hue / 360;
+                case HORIZONTAL:
+                    return strokeWidth * 3 + (getMeasuredWidth() - strokeWidth * 6) * hue / 360;
+            }
+        }
+
+    }
 }
 

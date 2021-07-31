@@ -23,37 +23,26 @@
  *
  */
 
-plugins {
-    id 'com.android.library'
-}
+package com.tianscar.colorpicker;
 
-android {
-    compileSdkVersion 31
-    buildToolsVersion "30.0.3"
+import android.view.View;
+import android.widget.LinearLayout;
 
-    defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 31
-        versionCode 2
-        versionName "1.0.0.1"
+import androidx.annotation.NonNull;
+
+final class Utils {
+
+    private Utils(){}
+
+    @NonNull
+    private static LinearLayout.LayoutParams getLayoutParams(@NonNull View view) {
+        return (LinearLayout.LayoutParams) view.getLayoutParams();
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
+    public static void setWeight(@NonNull View view, float weight) {
+        LinearLayout.LayoutParams layoutParams = getLayoutParams(view);
+        layoutParams.weight = weight;
+        view.setLayoutParams(layoutParams);
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
-
-}
-
-dependencies {
-
-    implementation 'androidx.appcompat:appcompat:1.3.0'
 
 }

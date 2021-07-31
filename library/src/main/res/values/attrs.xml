@@ -26,24 +26,20 @@
 
 <resources>
 
-    <declare-styleable name="HueRect">
-        <attr name="android:orientation"/>
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth" format="dimension"/>
-        <attr name="cursorRadius" format="dimension"/>
-    </declare-styleable>
-
-    <declare-styleable name="ColorRect">
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth"/>
-    </declare-styleable>
-
     <declare-styleable name="RectColorPicker">
         <attr name="android:orientation"/>
         <attr name="android:cursorVisible"/>
         <attr name="cursorWidth"/>
         <attr name="cursorRadius"/>
-        <attr name="dividerSize" format="dimension"/>
+        <attr name="hue"/>
+        <attr name="saturation"/>
+        <attr name="value"/>
+        <attr name="order" format="integer">
+            <enum name="ascending" value="0" />
+            <enum name="descending" value="1" />
+        </attr>
+        <attr name="hueRectWeight" format="float"/>
+        <attr name="colorRectWeight" format="float"/>
     </declare-styleable>
 
 </resources>

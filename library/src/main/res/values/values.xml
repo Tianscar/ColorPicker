@@ -25,7 +25,6 @@
   -->
 
 <resources>
-    <dimen name="colorpicker_cursor_width_default">8dp</dimen>
+    <dimen name="colorpicker_cursor_width_default">4dp</dimen>
     <dimen name="colorpicker_rect_cursor_radius_default">2dp</dimen>
-    <dimen name="rect_colorpicker_divider_width_default">8dp</dimen>
 </resources>
