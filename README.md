@@ -11,9 +11,9 @@
         });
 ```
 * **RectColorPicker**<br/>
-[**demo**](https://github.com/Tianscar/ColorPicker/blob/master/app/src/main/java/com/tianscar/colorpickerdemo/MainActivity.java)<br/><br/>
+[**demo**](https://github.com/Tianscar/ColorPicker/blob/master/app/src/main/java/com/tianscar/colorpickerdemo/MainActivity.java)<br/>
 Supports horizontal & vertical orientation.<br/>
-Supports ascending & descending order.<br/><br/>
+Supports ascending & descending order.<br/>
 **Horizontal Ascending**<br/>
 <img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696478.png" width="20%" height="20%"></img><br/><br/>
 **Horizontal Descending**<br/>
@@ -22,7 +22,7 @@ Supports ascending & descending order.<br/><br/>
 <img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696501.png" width="20%" height="20%"></img><br/><br/>
 **Vertical Descending**<br/>
 <img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696507.png" width="20%" height="20%"></img><br/><br/>
-* **RoundColorPicker**<br/><br/>
+* **RoundColorPicker**<br/>
 Coming soon.
 
 # To get a Git project into your build (gradle):
