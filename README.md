@@ -24,7 +24,7 @@ allprojects {
 ```
 dependencies {
 	...
-	implementation 'com.github.tianscar:colorpicker:1.0.0.0'
+	implementation 'com.github.tianscar:colorpicker:1.0.0.1'
 }
 ```
 
