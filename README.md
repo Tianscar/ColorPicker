@@ -1,10 +1,28 @@
 # ColorPicker
-**Simple ColorPicker widgets for Android.**
-
+**Simple ColorPicker widgets for Android.**<br/><br/>
+* **Style attributes supports both XML & Java code.**<br/><br/>
+* **Interface example**
+```
+ rectColorPicker.setOnColorPickedListener(new RectColorPicker.OnColorPickedListener() {
+            @Override
+            public void onColorPicked(RectColorPicker picker, int color) {
+                // DO SOMETHING
+            }
+        });
+```
 * **RectColorPicker**<br/>
-The first available ColorPicker view.<br/>
+[**demo**](https://github.com/Tianscar/ColorPicker/blob/master/app/src/main/java/com/tianscar/colorpickerdemo/MainActivity.java)<br/><br/>
 Supports horizontal & vertical orientation.<br/>
-* **RoundColorPicker**<br/>
+Supports ascending & descending order.<br/><br/>
+**Horizontal Ascending**<br/>
+<img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696478.png" width="20%" height="20%"></img><br/><br/>
+**Horizontal Descending**<br/>
+<img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696495.png" width="20%" height="20%"></img><br/><br/>
+**Vertical Ascending**<br/>
+<img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696501.png" width="20%" height="20%"></img><br/><br/>
+**Vertical Descending**<br/>
+<img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696507.png" width="20%" height="20%"></img><br/><br/>
+* **RoundColorPicker**<br/><br/>
 Coming soon.
 
 # To get a Git project into your build (gradle):
