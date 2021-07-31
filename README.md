@@ -1,6 +1,6 @@
 # ColorPicker
-**Simple ColorPicker widgets for Android.**<br/><br/>
-* **Style attributes supports both XML & Java code.**<br/><br/>
+**Simple ColorPicker widgets for Android.**<br/>
+* **Style attributes supports both XML & Java code.**<br/>
 * **Interface example**
 ```
  rectColorPicker.setOnColorPickedListener(new RectColorPicker.OnColorPickedListener() {
