@@ -24,22 +24,25 @@
   ~
   -->
 
-<resources>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tianscar.colorpickerdemo">
 
-    <declare-styleable name="RectColorPicker">
-        <attr name="android:orientation"/>
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth" format="dimension"/>
-        <attr name="cursorRadius" format="dimension"/>
-        <attr name="hue" format="float"/>
-        <attr name="saturation" format="float"/>
-        <attr name="value" format="float"/>
-        <attr name="order" format="integer">
-            <enum name="ascending" value="0" />
-            <enum name="descending" value="1" />
-        </attr>
-        <attr name="hueRectWeight" format="float"/>
-        <attr name="colorRectWeight" format="float"/>
-    </declare-styleable>
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ColorPicker">
+        <activity
+            android:name="com.tianscar.colorpickerdemo.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-</resources>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

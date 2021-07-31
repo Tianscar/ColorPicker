@@ -24,22 +24,24 @@
   ~
   -->
 
-<resources>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
 
-    <declare-styleable name="RectColorPicker">
-        <attr name="android:orientation"/>
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth" format="dimension"/>
-        <attr name="cursorRadius" format="dimension"/>
-        <attr name="hue" format="float"/>
-        <attr name="saturation" format="float"/>
-        <attr name="value" format="float"/>
-        <attr name="order" format="integer">
-            <enum name="ascending" value="0" />
-            <enum name="descending" value="1" />
-        </attr>
-        <attr name="hueRectWeight" format="float"/>
-        <attr name="colorRectWeight" format="float"/>
-    </declare-styleable>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-</resources>
+        <com.tianscar.colorpicker.RectColorPicker
+            android:id="@+id/rect_colorpicker"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

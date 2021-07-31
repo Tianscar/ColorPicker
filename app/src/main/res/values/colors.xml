@@ -25,21 +25,11 @@
   -->
 
 <resources>
-
-    <declare-styleable name="RectColorPicker">
-        <attr name="android:orientation"/>
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth" format="dimension"/>
-        <attr name="cursorRadius" format="dimension"/>
-        <attr name="hue" format="float"/>
-        <attr name="saturation" format="float"/>
-        <attr name="value" format="float"/>
-        <attr name="order" format="integer">
-            <enum name="ascending" value="0" />
-            <enum name="descending" value="1" />
-        </attr>
-        <attr name="hueRectWeight" format="float"/>
-        <attr name="colorRectWeight" format="float"/>
-    </declare-styleable>
-
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

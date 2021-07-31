@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ MIT License
   ~
@@ -25,21 +24,9 @@
   -->
 
 <resources>
-
-    <declare-styleable name="RectColorPicker">
-        <attr name="android:orientation"/>
-        <attr name="android:cursorVisible"/>
-        <attr name="cursorWidth" format="dimension"/>
-        <attr name="cursorRadius" format="dimension"/>
-        <attr name="hue" format="float"/>
-        <attr name="saturation" format="float"/>
-        <attr name="value" format="float"/>
-        <attr name="order" format="integer">
-            <enum name="ascending" value="0" />
-            <enum name="descending" value="1" />
-        </attr>
-        <attr name="hueRectWeight" format="float"/>
-        <attr name="colorRectWeight" format="float"/>
-    </declare-styleable>
-
+    <string name="app_name">ColorPickerDemo</string>
+    <string name="horizontal_ascending">Horizontal Ascending</string>
+    <string name="horizontal_descending">Horizontal Descending</string>
+    <string name="vertical_ascending">Vertical Ascending</string>
+    <string name="vertical_descending">Vertical Descending</string>
 </resources>

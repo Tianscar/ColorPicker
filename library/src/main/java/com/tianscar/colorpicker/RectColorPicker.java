@@ -69,14 +69,8 @@ public class RectColorPicker extends LinearLayout {
     private final ColorRect colorRect;
     private final HueRect hueRect;
 
-    public final static class Order {
-
-        private Order() {}
-
-        public final static int ASCENDING = 0;
-        public final static int DESCENDING = 1;
-
-    }
+    public final static int ASCENDING = 0;
+    public final static int DESCENDING = 1;
 
     private volatile int mOrder;
 
@@ -161,11 +155,8 @@ public class RectColorPicker extends LinearLayout {
         setCursorRadius(typedArray.getDimension(R.styleable.RectColorPicker_cursorRadius,
                 getResources().getDimension(R.dimen.colorpicker_rect_cursor_radius_default)));
         setOrientation(typedArray.getInt(R.styleable.RectColorPicker_android_orientation, HORIZONTAL));
-        final float initHue = typedArray.getFloat(R.styleable.RectColorPicker_hue, 0);
-        final float initSaturation = typedArray.getFloat(R.styleable.RectColorPicker_saturation, 0);
-        final float initValue = typedArray.getFloat(R.styleable.RectColorPicker_value, 1);
         final int initOrder = typedArray.getInt(R.styleable.RectColorPicker_order,
-                Order.ASCENDING);
+                ASCENDING);
         final float initHueRectWeight = typedArray.getFloat(R.styleable.RectColorPicker_hueRectWeight
                 , 8);
         final float initColorRectWeight = typedArray.getFloat(R.styleable.RectColorPicker_colorRectWeight
@@ -184,9 +175,7 @@ public class RectColorPicker extends LinearLayout {
                 hueRect.setLayoutParams(params2);
                 setColorRectWeight(initColorRectWeight);
                 setHueRectWeight(initHueRectWeight);
-                setHue(initHue);
-                setSaturation(initSaturation);
-                setValue(initValue);
+                setColor(Color.RED);
                 setOrder(initOrder);
             }
         });
@@ -201,19 +190,19 @@ public class RectColorPicker extends LinearLayout {
     }
 
     public void ascending() {
-        setOrder(Order.ASCENDING);
+        setOrder(ASCENDING);
     }
 
     public void descending() {
-        setOrder(Order.DESCENDING);
+        setOrder(DESCENDING);
     }
 
     public void reverse() {
         switch (mOrder) {
-            case Order.ASCENDING: default:
+            case ASCENDING: default:
                 descending();
                 break;
-            case Order.DESCENDING:
+            case DESCENDING:
                 ascending();
                 break;
         }
@@ -223,11 +212,11 @@ public class RectColorPicker extends LinearLayout {
         removeAllViews();
         mOrder = order;
         switch (order) {
-            case Order.ASCENDING: default:
+            case ASCENDING: default:
                 addView(colorRect);
                 addView(hueRect);
                 break;
-            case Order.DESCENDING:
+            case DESCENDING:
                 addView(hueRect);
                 addView(colorRect);
                 break;
@@ -256,10 +245,9 @@ public class RectColorPicker extends LinearLayout {
         mColorAlpha = Color.alpha(color);
         float[] colorHSV = new float[3];
         Color.colorToHSV(color, colorHSV);
-        colorRect.setHue(colorHSV[0]);
-        hueRect.setHue(colorHSV[0]);
-        colorRect.setSaturation(colorHSV[1]);
-        colorRect.setValue(colorHSV[2]);
+        setHue(colorHSV[0]);
+        setSaturation(colorHSV[1]);
+        setValue(colorHSV[2]);
     }
 
     private int getColor() {
