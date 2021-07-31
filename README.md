@@ -13,7 +13,7 @@
 * **RectColorPicker**<br/>
 [**demo**](https://github.com/Tianscar/ColorPicker/blob/master/app/src/main/java/com/tianscar/colorpickerdemo/MainActivity.java)<br/>
 Supports horizontal & vertical orientation.<br/>
-Supports ascending & descending order.<br/>
+Supports ascending & descending order.<br/><br/>
 **Horizontal Ascending**<br/>
 <img src="https://github.com/Tianscar/ColorPicker/blob/master/readme_assets/Screenshot_1627696478.png" width="20%" height="20%"></img><br/><br/>
 **Horizontal Descending**<br/>
